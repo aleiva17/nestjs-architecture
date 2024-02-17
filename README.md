@@ -1,73 +1,66 @@
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
+  <h1 align="center">NestJS Architecture & Advanced Patterns</h1>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 1. Hexagonal Architecture (Ports and Adapters)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Folder structure per bounded context:
+- Application:
+  - Contain the application services, modules, facades, handlers and commands.
+  - This folder represents the application layer.
+  - It will communicate with the data access components, message brokers and other external systems through interfaces or ports.
+- Domain:
+  - Contain the domain models, value objects, domain events, factories and other domain specific components.
+  - This folder represents the domain layer.
+- Infrastructure:
+  - Contain the data access components, message brokers and other external systems.
+  - This folder represents the infrastructure layer.
+  - It will implement the interfaces (AKA. the ports) defined by the application layer.
+- Presenters or interfaces:
+  - Contain the controllers, gateways and other user facing components for APIs.
+  - This folder is also known/named as `user interface` or just `interface`.
 
-## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+More details about this structure:
+1. **Value objects** is an **immutable** object and side effect free that represent a descriptive aspect of the domain with no conceptual identity. 
+2. Services **must not** reference DTO's (because are part of other layer). So, we should consider using **payloads** or **commands** (best option) to handle the different operations.
+3. On the controller now instead of passing the DTO **we instantiate the command** passing the required properties (to instantiate) **using the values from the DTO**.
+4. Remember that the factory is a **provider** (@Injectable()), so it **must be registered** on the module as a provider.
+5. The ports/interfaces **define the contract** for the interactions with **the external world**. While adapters implement these contracts in services in between the application layer and external systems.
 
-## Installation
+```txt
+/application
+    /commands
+    /ports
+      *.repository.ts
+    *.module.ts
+    *.service/ts
 
-```bash
-$ npm install
+/domain
+    /factories
+        *.factory.ts
+    /value-objects
+    *.ts (models NOT entities)
+
+/infrastructure
+  *-infrastructure.module.ts
+  /persistence
+    /in-memory
+      ... (this is the same structure as orm but handling in memory)
+    /orm
+      /entities
+        *.entity.ts
+      /mappers
+        *.mapper.ts
+      /repositories
+        *.repository.ts
+      orm-persistence.module.ts
+
+/presenters
+    /http
+        /dto
+            create-*.dto.ts
+            update-*.dto.ts
+        *.controller.ts
 ```
-
-## Running the app
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
