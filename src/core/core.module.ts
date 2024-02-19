@@ -2,8 +2,17 @@ import { Module } from '@nestjs/common';
 import { ApplicationBootstrapOptions } from '../common/interfaces/application-bootstrap-options.interfaces';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
+import { EVENT_STORE_CONNECTION } from './core.constants';
 
-@Module({})
+@Module({
+  imports: [
+    // from docker compose
+    MongooseModule.forRoot('mongodb://localhost:27018/vf-event-store', {
+      connectionName: EVENT_STORE_CONNECTION, // our new namespace for this mongodb
+      directConnection: true, // needed to connect to local replica sets
+    }),
+  ],
+})
 export class CoreModule {
   static forRoot(options: ApplicationBootstrapOptions) {
     const imports =

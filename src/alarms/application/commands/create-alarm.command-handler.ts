@@ -1,4 +1,4 @@
-import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateAlarmCommand } from './create-alarm.command';
 import { Logger } from '@nestjs/common';
 import { CreateAlarmRepository } from '../ports/create-alarm.repository';
@@ -12,9 +12,8 @@ export class CreateAlarmCommandHandler
   private readonly logger = new Logger(CreateAlarmCommandHandler.name);
 
   constructor(
-    private readonly alarmRepository: CreateAlarmRepository,
+    private readonly eventPublisher: EventPublisher,
     private readonly alarmFactory: AlarmFactory,
-    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: CreateAlarmCommand) {
@@ -27,12 +26,10 @@ export class CreateAlarmCommandHandler
       command.triggeredAt,
       command.items,
     );
-    const newAlarm = await this.alarmRepository.save(alarm);
 
-    // This will change with event sourcing, because domain events should be
-    // dispatched from the aggregate root, inside the domain layer.
-    this.eventBus.publish(new AlarmCreatedEvent(alarm));
+    this.eventPublisher.mergeObjectContext(alarm);
+    alarm.commit();
 
-    return newAlarm;
+    return alarm;
   }
 }
