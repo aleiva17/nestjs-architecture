@@ -21,6 +21,10 @@ import { UpsertMaterializedAlarmRepository } from '../../../application/ports/up
       useExisting: InMemoryAlarmRepository,
     },
   ],
-  exports: [CreateAlarmRepository, FindAlarmsRepository],
+  exports: [
+    CreateAlarmRepository,
+    FindAlarmsRepository,
+    UpsertMaterializedAlarmRepository,
+  ],
 })
 export class InMemoryAlarmPersistenceModule {}
